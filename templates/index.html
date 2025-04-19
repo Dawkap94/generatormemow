@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generator Memów</title>
+    <style>
+        .carousel-container {
+            overflow-x: auto;
+            white-space: nowrap;
+            padding: 10px;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            scroll-behavior: smooth;
+        }
+
+        .carousel-item {
+            display: inline-block;
+            margin-right: 10px;
+            text-align: center;
+        }
+
+        .carousel-item img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            transition: 0.3s;
+        }
+
+        input[type="radio"]:checked + img {
+            border: 2px solid red;
+            box-shadow: 0 0 10px red;
+        }
+
+        #preview-container {
+            display: none;
+            position: relative;
+            margin-top: 30px;
+            text-align: center;
+            max-width: 100%;
+        }
+
+        #preview-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+
+        .text-container {
+            position: absolute;
+            z-index: 10;
+        }
+
+        .draggable {
+            font-size: 24px;
+            background: rgba(255, 255, 255, 0.7);
+            border: none;
+            padding: 5px;
+            text-align: center;
+            min-width: 100px;
+            min-height: 40px;
+            max-width: 80%;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .resize-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #333;
+            cursor: pointer;
+            z-index: 20;
+        }
+
+        .top-left {
+            top: -6px;
+            left: -6px;
+            cursor: nwse-resize;
+        }
+
+        .top-right {
+            top: -6px;
+            right: -6px;
+            cursor: nesw-resize;
+        }
+
+        .bottom-left {
+            bottom: -6px;
+            left: -6px;
+            cursor: nesw-resize;
+        }
+
+        .bottom-right {
+            bottom: -6px;
+            right: -6px;
+            cursor: nwse-resize;
+        }
+    </style>
+</head>
+<body>
+    <form method="POST" action="/">
+        <label>Wybierz obrazek:</label><br>
+        <div class="carousel-container">
+            {% for i in range(1, 11) %}
+                <label class="carousel-item">
+                    <input type="radio" name="image" value="{{ i }}.png" required style="display: none;">
+                    <img src="{{ url_for('static', filename='memes/' ~ i ~ '.png') }}"
+                         alt="{{ i }}" onclick="selectImage('{{ i }}.png')">
+                </label>
+            {% endfor %}
+        </div>
+
+        <div id="preview-container">
+            <img id="preview-image" src="" alt="Preview">
+            <div id="topTextContainer" class="text-container">
+                <input type="text" id="topText" name="top_text" placeholder="Tekst górny" class="draggable">
+                <div class="resize-handle top-left" onmousedown="startHandle(event, 'topTextContainer', 'top-left')"></div>
+                <div class="resize-handle top-right" onmousedown="startHandle(event, 'topTextContainer', 'top-right')"></div>
+                <div class="resize-handle bottom-left" onmousedown="startHandle(event, 'topTextContainer', 'bottom-left')"></div>
+                <div class="resize-handle bottom-right" onmousedown="startHandle(event, 'topTextContainer', 'bottom-right')"></div>
+            </div>
+            <div id="bottomTextContainer" class="text-container">
+                <input type="text" id="bottomText" name="bottom_text" placeholder="Tekst dolny" class="draggable">
+                <div class="resize-handle top-left" onmousedown="startHandle(event, 'bottomTextContainer', 'top-left')"></div>
+                <div class="resize-handle top-right" onmousedown="startHandle(event, 'bottomTextContainer', 'top-right')"></div>
+                <div class="resize-handle bottom-left" onmousedown="startHandle(event, 'bottomTextContainer', 'bottom-left')"></div>
+                <div class="resize-handle bottom-right" onmousedown="startHandle(event, 'bottomTextContainer', 'bottom-right')"></div>
+            </div>
+        </div>
+
+        <!-- Ukryte pola dla pozycji tekstu -->
+        <input type="hidden" id="topTextX" name="top_text_x" value="0">
+        <input type="hidden" id="topTextY" name="top_text_y" value="20">
+        <input type="hidden" id="bottomTextX" name="bottom_text_x" value="0">
+        <input type="hidden" id="bottomTextY" name="bottom_text_y" value="0">
+
+        <label>Kolor tekstu:</label>
+        <select name="color">
+            <option value="czerwony">Czerwony</option>
+            <option value="biały">Biały</option>
+            <option value="czarny">Czarny</option>
+            <option value="żółty">Żółty</option>
+        </select><br><br>
+
+        <button type="submit">🎨 Generuj Mema</button>
+    </form>
+
+    {% if meme_generated %}
+        <h2>Twój mem:</h2>
+        <img src="{{ meme_path }}" style="max-width:500px;">
+    {% endif %}
+
+    <script>
+        let activeElement = null;
+        let handleType = null;
+        let offsetX, offsetY;
+
+        function selectImage(imageName) {
+            const previewContainer = document.getElementById('preview-container');
+            const previewImage = document.getElementById('preview-image');
+            const topTextContainer = document.getElementById('topTextContainer');
+            const bottomTextContainer = document.getElementById('bottomTextContainer');
+            const imgRect = previewImage.getBoundingClientRect();
+
+            previewContainer.style.display = 'block';
+            previewImage.src = '/static/memes/' + imageName;
+
+            document.querySelector(`input[name="image"][value="${imageName}"]`).checked = true;
+
+            // Reset pozycji i rozmiaru
+            topTextContainer.style.left = '50%';
+            topTextContainer.style.top = '20px';
+            topTextContainer.style.transform = 'translateX(-50%)';
+            topTextContainer.querySelector('input').style.width = '80%';
+            topTextContainer.querySelector('input').style.height = '40px';
+
+            bottomTextContainer.style.left = '50%';
+            bottomTextContainer.style.bottom = '20px';
+            bottomTextContainer.style.top = 'auto';
+            bottomTextContainer.style.transform = 'translateX(-50%)';
+            bottomTextContainer.querySelector('input').style.width = '80%';
+            bottomTextContainer.querySelector('input').style.height = '40px';
+
+            // Ustaw początkowe współrzędne w pikselach (centruj x)
+            const centerX = imgRect.width / 2;
+            document.getElementById('topTextX').value = centerX;
+            document.getElementById('topTextY').value = 20;
+            document.getElementById('bottomTextX').value = centerX;
+            document.getElementById('bottomTextY').value = imgRect.height - 60; // Odejmujemy 60px, aby tekst był nad dolną krawędzią
+        }
+
+        function startHandle(event, containerId, type) {
+            event.preventDefault();
+            activeElement = document.getElementById(containerId);
+            handleType = type;
+            const rect = activeElement.getBoundingClientRect();
+            offsetX = event.clientX - rect.left;
+            offsetY = event.clientY - rect.top;
+
+            document.addEventListener('mousemove', handleMove);
+            document.addEventListener('mouseup', stopHandle);
+        }
+
+        function handleMove(event) {
+            if (!activeElement) return;
+
+            const previewImage = document.getElementById('preview-image');
+            const imgRect = previewImage.getBoundingClientRect();
+            const input = activeElement.querySelector('input');
+            const containerRect = activeElement.getBoundingClientRect();
+
+            if (event.ctrlKey) {
+                // Przenoszenie
+                let newLeft = event.clientX - offsetX - imgRect.left;
+                let newTop = event.clientY - offsetY - imgRect.top;
+
+                newLeft = Math.max(0, Math.min(newLeft, imgRect.width - containerRect.width));
+                newTop = Math.max(0, Math.min(newTop, imgRect.height - containerRect.height));
+
+                activeElement.style.left = newLeft + 'px';
+                activeElement.style.top = newTop + 'px';
+                activeElement.style.bottom = 'auto';
+                activeElement.style.transform = 'none';
+
+                // Aktualizacja ukrytych pól dla pozycji
+                const hiddenX = document.getElementById(activeElement.id === 'topTextContainer' ? 'topTextX' : 'bottomTextX');
+                const hiddenY = document.getElementById(activeElement.id === 'topTextContainer' ? 'topTextY' : 'bottomTextY');
+                hiddenX.value = newLeft;
+                hiddenY.value = newTop;
+            } else {
+                // Zmiana rozmiaru
+                let newWidth, newHeight, newLeft = containerRect.left - imgRect.left, newTop = containerRect.top - imgRect.top;
+                const minWidth = 100;
+                const minHeight = 40;
+                const maxWidth = imgRect.width * 0.8;
+                const maxHeight = imgRect.height * 0.5;
+
+                if (handleType === 'top-left') {
+                    newWidth = containerRect.width - (event.clientX - containerRect.left);
+                    newHeight = containerRect.height - (event.clientY - containerRect.top);
+                    newLeft = containerRect.left - imgRect.left + (event.clientX - containerRect.left);
+                    newTop = containerRect.top - imgRect.top + (event.clientY - containerRect.top);
+                } else if (handleType === 'top-right') {
+                    newWidth = event.clientX - containerRect.left;
+                    newHeight = containerRect.height - (event.clientY - containerRect.top);
+                    newTop = containerRect.top - imgRect.top + (event.clientY - containerRect.top);
+                } else if (handleType === 'bottom-left') {
+                    newWidth = containerRect.width - (event.clientX - containerRect.left);
+                    newHeight = event.clientY - containerRect.top;
+                    newLeft = containerRect.left - imgRect.left + (event.clientX - containerRect.left);
+                } else if (handleType === 'bottom-right') {
+                    newWidth = event.clientX - containerRect.left;
+                    newHeight = event.clientY - containerRect.top;
+                }
+
+                newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
+                newHeight = Math.max(minHeight, Math.min(newHeight, maxHeight));
+
+                input.style.width = newWidth + 'px';
+                input.style.height = newHeight + 'px';
+
+                if (handleType.includes('left')) {
+                    activeElement.style.left = newLeft + 'px';
+                }
+                if (handleType.includes('top')) {
+                    activeElement.style.top = newTop + 'px';
+                    activeElement.style.bottom = 'auto';
+                }
+                activeElement.style.transform = 'none';
+
+                // Aktualizacja ukrytych pól dla pozycji przy zmianie rozmiaru
+                if (handleType.includes('left') || handleType.includes('top')) {
+                    const hiddenX = document.getElementById(activeElement.id === 'topTextContainer' ? 'topTextX' : 'bottomTextX');
+                    const hiddenY = document.getElementById(activeElement.id === 'topTextContainer' ? 'topTextY' : 'bottomTextY');
+                    hiddenX.value = newLeft;
+                    hiddenY.value = newTop;
+                }
+            }
+        }
+
+        function stopHandle() {
+            activeElement = null;
+            handleType = null;
+            document.removeEventListener('mousemove', handleMove);
+            document.removeEventListener('mouseup', stopHandle);
+        }
+    </script>
+</body>
+</html>
