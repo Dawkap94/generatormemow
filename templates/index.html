@@ -1,290 +1,354 @@
 <!DOCTYPE html>
-<html>
+<html lang="pl">
 <head>
-    <title>Generator Memów</title>
-    <style>
-        .carousel-container {
-            overflow-x: auto;
-            white-space: nowrap;
-            padding: 10px;
-            border: 2px solid #eee;
-            border-radius: 10px;
-            scroll-behavior: smooth;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meme Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #2b2b2b;
+      color: #eee;
+    }
 
-        .carousel-item {
-            display: inline-block;
-            margin-right: 10px;
-            text-align: center;
-        }
+    form {
+      margin-bottom: 30px;
+      width:500px;
+    }
+    h1, h2{
+      margin: 10px 0;
+      font-weight: bold;
+      stroke-width: 2px;
+      stroke: #000;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input[type="file"]{
+      cursor: pointer;
+    }
+    input[type="text"],
+    input[type="file"] {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      box-sizing: border-box;
+      
+      background-color: #555;
+      color: #eee;
+      border: none;
+    }
+    input[type="color"]{
+      border: none;
+      border-radius: 0;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      margin-top: 5px;
+      background: #555;
+      outline: none;
+      cursor: pointer;
+    }
+    
+    input:focus{
+      outline: none;
+      border: 2px solid #128ada;
+    }
 
-        .carousel-item img {
-            width: 150px;
-            height: 150px;
-            object-fit: cover;
-            border: 2px solid #ccc;
-            border-radius: 10px;
-            transition: 0.3s;
-        }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #555;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
 
-        input[type="radio"]:checked + img {
-            border: 2px solid red;
-            box-shadow: 0 0 10px red;
-        }
+    .meme-preview {
+      position: relative;
+      border: dashed 1px #999;
+      display: inline-block;
+      width: 500px;
+      height: 500px;
+    }
 
-        #preview-container {
-            display: none;
-            position: relative;
-            margin-top: 30px;
-            text-align: center;
-            max-width: 100%;
-        }
+    .top-text,
+    .bottom-text {
+      position: absolute;
+      left: 50%;
+      transform: translate(-50%);
+      color: white;
+      font-family: Impact, sans-serif;
+      font-size: 2em;
+      text-shadow: 2px 2px 0 #000;
+      text-align: center;
+      pointer-events: none;
+      word-break: break-word;
+      width: 1px;
+    }
 
-        #preview-image {
-            max-width: 100%;
-            height: auto;
-            border-radius: 10px;
-        }
+    .top-text {
+      top: 10px;
+    }
 
-        .text-container {
-            position: absolute;
-            z-index: 10;
-        }
+    .bottom-text {
+      bottom: 10px;
+    }
+    .meme-preview #preview-img {
+        display: block;
+        overflow: hidden;
+        width: 500px;
+        height: 500px;
+        text-indent:-9999px;
+        margin-left: -20000px;
+    }
+    .memeGenerator_container{
+      width: 500px;
+      height: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .memeGenerator_bg{
+      background-image: url('https://images.fineartamerica.com/images/artworkimages/medium/3/meme-pattern-daniel-de-klawn.jpg');
+      width: 100vw;
+      height: 100vh;
+      opacity: 0.05;
+      
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: -1;
+    }
+    .memeGenerator_text{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .carousel {
+      position: relative;
+      width: 250px;
+      height: 250px;
+      margin: 20px auto;
+      overflow: hidden;
+    }
+  
+    .carousel-track {
+      display: flex;
+      transition: transform 0.4s ease-in-out;
+    }
+  
+    .carousel-img {
+      width: 250px;
+      flex-shrink: 0;
+      height: 250px;
+      object-fit: cover;
+      object-position: center;
+      cursor: pointer;
+    }
+  
+    .carousel-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0,0,0,0.5);
+      border: none;
+      color: white;
+      font-size: 2rem;
+      padding: 10px;
+      cursor: pointer;
+      z-index: 2;
+    }
+  
+    .carousel-btn.prev {
+      left: 10px;
+    }
+  
+    .carousel-btn.next {
+      right: 10px;
+    }
+    .memeGenerator_inputTemplates{
+      display: flex; 
+      width: 800px; 
+      justify-content: space-between;
+    }
+    @media screen and (max-width: 600px){
+      .memeGenerator_container, form{
+        width: 100%;
+      }
+      .meme-preview, .meme-preview #preview-img{
+        width: 100%;
+        min-height: 30vh;
+        height: 100%;
+      }
 
-        .draggable {
-            font-size: 24px;
-            background: rgba(255, 255, 255, 0.7);
-            border: none;
-            padding: 5px;
-            text-align: center;
-            min-width: 100px;
-            min-height: 40px;
-            max-width: 80%;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .resize-handle {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            background-color: #333;
-            cursor: pointer;
-            z-index: 20;
-        }
-
-        .top-left {
-            top: -6px;
-            left: -6px;
-            cursor: nwse-resize;
-        }
-
-        .top-right {
-            top: -6px;
-            right: -6px;
-            cursor: nesw-resize;
-        }
-
-        .bottom-left {
-            bottom: -6px;
-            left: -6px;
-            cursor: nesw-resize;
-        }
-
-        .bottom-right {
-            bottom: -6px;
-            right: -6px;
-            cursor: nwse-resize;
-        }
-    </style>
+    }
+  </style>
 </head>
 <body>
-    <form method="POST" action="/">
-        <label>Wybierz obrazek:</label><br>
-        <div class="carousel-container">
-            {% for i in range(1, 11) %}
-                <label class="carousel-item">
-                    <input type="radio" name="image" value="{{ i }}.png" required style="display: none;">
-                    <img src="{{ url_for('static', filename='memes/' ~ i ~ '.png') }}"
-                         alt="{{ i }}" onclick="selectImage('{{ i }}.png')">
-                </label>
-            {% endfor %}
+  <div class="memeGenerator_bg"></div>
+  <div class="memeGenerator_container">
+    <h1>Meme Generator</h1>
+    <div class="memeGenerator_inputTemplates">
+      <form action="/generate" method="POST" enctype="multipart/form-data">
+        <label for="image">Wgraj obrazek:</label>
+        <input type="file" name="image" id="image" accept=".jpg, .jpeg, .png" required />
+  
+        
+        <label for="top_text">Tekst górny:</label>
+        <div class="memeGenerator_text">
+          <input type="text" name="top_text" id="top_text" maxlength="100"/>
+          <input type="color" name="top_color" id="colorPicker_top" />
         </div>
-
-        <div id="preview-container">
-            <img id="preview-image" src="" alt="Preview">
-            <div id="topTextContainer" class="text-container">
-                <input type="text" id="topText" name="top_text" placeholder="Tekst górny" class="draggable">
-                <div class="resize-handle top-left" onmousedown="startHandle(event, 'topTextContainer', 'top-left')"></div>
-                <div class="resize-handle top-right" onmousedown="startHandle(event, 'topTextContainer', 'top-right')"></div>
-                <div class="resize-handle bottom-left" onmousedown="startHandle(event, 'topTextContainer', 'bottom-left')"></div>
-                <div class="resize-handle bottom-right" onmousedown="startHandle(event, 'topTextContainer', 'bottom-right')"></div>
-            </div>
-            <div id="bottomTextContainer" class="text-container">
-                <input type="text" id="bottomText" name="bottom_text" placeholder="Tekst dolny" class="draggable">
-                <div class="resize-handle top-left" onmousedown="startHandle(event, 'bottomTextContainer', 'top-left')"></div>
-                <div class="resize-handle top-right" onmousedown="startHandle(event, 'bottomTextContainer', 'top-right')"></div>
-                <div class="resize-handle bottom-left" onmousedown="startHandle(event, 'bottomTextContainer', 'bottom-left')"></div>
-                <div class="resize-handle bottom-right" onmousedown="startHandle(event, 'bottomTextContainer', 'bottom-right')"></div>
-            </div>
+        
+        
+        <label for="bottom_text">Tekst dolny:</label>
+        <div class="memeGenerator_text">
+          <input type="text" name="bottom_text" id="bottom_text" maxlength="100"/>
+          <input type="color" name="bottom_color" id="colorPicker_bottom" />
         </div>
+        
+        <button type="submit">Generuj mema</button>
+      </form>
+      <div class="carousel">
+        <button class="carousel-btn prev">&#10094;</button>
+        <div class="carousel-track">
+          <img src="https://imgflip.com/s/meme/Running-Away-Balloon.jpg" class="carousel-img" alt="Meme 1" />
+          <img src="https://i.imgflip.com/1jqcf8.jpg?a484776" class="carousel-img" alt="Meme 2" />
+          <img src="https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-full-719a53dc.webp" class="carousel-img" alt="Meme 3" />
+          <img src="https://www.cnet.com/a/img/resize/20d6844768bd3f5f0df41deee97897423bcaf3c5/hub/2021/11/03/3c2a7d79-770e-4cfa-9847-66b3901fb5d7/c09.jpg?auto=webp&fit=crop&height=1200&width=1200" class="carousel-img" alt="Meme 4" />
+          <img src="https://dinoanimals.pl/wp-content/uploads/2013/09/Nosacz.jpg" class="carousel-img" alt="Meme 5" />
+        </div>
+        <button class="carousel-btn next">&#10095;</button>
+      </div>
+    </div>
+    
 
-        <!-- Ukryte pola dla pozycji tekstu -->
-        <input type="hidden" id="topTextX" name="top_text_x" value="0">
-        <input type="hidden" id="topTextY" name="top_text_y" value="20">
-        <input type="hidden" id="bottomTextX" name="bottom_text_x" value="0">
-        <input type="hidden" id="bottomTextY" name="bottom_text_y" value="0">
+    <h2>Podgląd:</h2>
+    <div class="meme-preview">
+      <img id="preview-img" src="#" alt="Podgląd obrazka" />
+      <div class="top-text" id="preview-top-text"></div>
+      <div class="bottom-text" id="preview-bottom-text"></div>
+    </div>
+  </div>
+  
 
-        <label>Kolor tekstu:</label>
-        <select name="color">
-            <option value="czerwony">Czerwony</option>
-            <option value="biały">Biały</option>
-            <option value="czarny">Czarny</option>
-            <option value="żółty">Żółty</option>
-        </select><br><br>
+  <script>
+    const borderPrev = document.querySelector('.meme-preview');
+    const imageInput = document.getElementById('image');
+    const previewImg = document.getElementById('preview-img');
+    const topInput = document.getElementById('top_text');
+    const bottomInput = document.getElementById('bottom_text');
+    const previewTop = document.getElementById('preview-top-text');
+    const previewBottom = document.getElementById('preview-bottom-text');
 
-        <button type="submit">🎨 Generuj Mema</button>
-    </form>
+    const color_top =  document.getElementById('colorPicker_top');
+    const color_bottom =  document.getElementById('colorPicker_bottom');
 
-    {% if meme_generated %}
-        <h2>Twój mem:</h2>
-        <img src="{{ meme_path }}" style="max-width:500px;">
-    {% endif %}
+    const track = document.querySelector('.carousel-track');
+    const images = document.querySelectorAll('.carousel-img');
+    const prevBtn = document.querySelector('.carousel-btn.prev');
+    const nextBtn = document.querySelector('.carousel-btn.next');
 
-    <script>
-        let activeElement = null;
-        let handleType = null;
-        let offsetX, offsetY;
+    let index = 0;
 
-        function selectImage(imageName) {
-            const previewContainer = document.getElementById('preview-container');
-            const previewImage = document.getElementById('preview-image');
-            const topTextContainer = document.getElementById('topTextContainer');
-            const bottomTextContainer = document.getElementById('bottomTextContainer');
-            const imgRect = previewImage.getBoundingClientRect();
+    function updateCarousel() {
+      track.style.transform = `translateX(-${index * 250}px)`;
+    }
 
-            previewContainer.style.display = 'block';
-            previewImage.src = '/static/memes/' + imageName;
+    prevBtn.addEventListener('click', () => {
+      index = (index - 1 + images.length) % images.length;
+      updateCarousel();
+    });
 
-            document.querySelector(`input[name="image"][value="${imageName}"]`).checked = true;
+    nextBtn.addEventListener('click', () => {
+      index = (index + 1) % images.length;
+      updateCarousel();
+    });
 
-            // Reset pozycji i rozmiaru
-            topTextContainer.style.left = '50%';
-            topTextContainer.style.top = '20px';
-            topTextContainer.style.transform = 'translateX(-50%)';
-            topTextContainer.querySelector('input').style.width = '80%';
-            topTextContainer.querySelector('input').style.height = '40px';
+    images.forEach(img => {
+      img.addEventListener('click', () => {
+        previewImg.src = img.src;
+        previewImg.style.marginLeft = "0";
+        borderPrev.style.border = 'none';
+      });
+    });
 
-            bottomTextContainer.style.left = '50%';
-            bottomTextContainer.style.bottom = '20px';
-            bottomTextContainer.style.top = 'auto';
-            bottomTextContainer.style.transform = 'translateX(-50%)';
-            bottomTextContainer.querySelector('input').style.width = '80%';
-            bottomTextContainer.querySelector('input').style.height = '40px';
+    imageInput.addEventListener('change', function () {
+      const file = this.files[0];
+      if (file && ["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
+        previewImg.src = URL.createObjectURL(file);
+        borderPrev.style.border = 'none';
+        previewImg.style.marginLeft = '0px'
+      } else {
+        alert("Tylko pliki JPG, JPEG i PNG są dozwolone.");
+        this.value = "";
+      }
+    });
+    color_top.addEventListener('input', () => {
+      previewTop.style.color = color_top.value;
+    })
+    color_bottom.addEventListener('input', () => {
+      previewBottom.style.color = color_bottom.value;
+    })
+    topInput.addEventListener('input', function () {
+      previewTop.textContent = this.value;
+      previewTop.style.width = `unset`
+    });
 
-            // Ustaw początkowe współrzędne w pikselach (centruj x)
-            const centerX = imgRect.width / 2;
-            document.getElementById('topTextX').value = centerX;
-            document.getElementById('topTextY').value = 20;
-            document.getElementById('bottomTextX').value = centerX;
-            document.getElementById('bottomTextY').value = imgRect.height - 60; // Odejmujemy 60px, aby tekst był nad dolną krawędzią
-        }
+    bottomInput.addEventListener('input', function () {
+      previewBottom.textContent = this.value;
+      previewBottom.style.width = `unset`
+    });
 
-        function startHandle(event, containerId, type) {
-            event.preventDefault();
-            activeElement = document.getElementById(containerId);
-            handleType = type;
-            const rect = activeElement.getBoundingClientRect();
-            offsetX = event.clientX - rect.left;
-            offsetY = event.clientY - rect.top;
+    function enableDrag(el) {
+      let offsetX = 0, offsetY = 0;
+      let isDragging = false;
+  
+      el.style.pointerEvents = "auto";
+      el.style.cursor = "grab";
+  
+      el.addEventListener("mousedown", (e) => {
+        el.style.transform = 'translate(0)'
+        el.style.transform = 'translate(0)'
+        isDragging = true;
+        const rect = el.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        el.style.cursor = "grabbing";
+        previewTop.style.width = `${Math.abs(previewTop.offsetWidth + 1)}px`
+        previewBottom.style.width = `${Math.abs(previewBottom.offsetWidth + 1)}px`
+        e.preventDefault();
+      });
+  
+      document.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+  
+        const containerRect = borderPrev.getBoundingClientRect();
+        let left = e.clientX - containerRect.left - offsetX;
+        let top = e.clientY - containerRect.top - offsetY;
 
-            document.addEventListener('mousemove', handleMove);
-            document.addEventListener('mouseup', stopHandle);
-        }
+        const maxLeft = containerRect.width - el.offsetWidth;
+        const maxTop = previewTop.offsetHeight == 0 ? 465 : containerRect.height - previewTop.offsetHeight;
+        
+        el.style.left = Math.max(0, Math.min(left, maxLeft)) + "px";
+        el.style.top = Math.max(0, Math.min(top, maxTop)) + "px";
+      });
+  
+      document.addEventListener("mouseup", () => {
+        isDragging = false;
+        el.style.cursor = "grab";
+      });
+    }
+  
+    enableDrag(previewTop);
+    enableDrag(previewBottom);
+  </script>
 
-        function handleMove(event) {
-            if (!activeElement) return;
-
-            const previewImage = document.getElementById('preview-image');
-            const imgRect = previewImage.getBoundingClientRect();
-            const input = activeElement.querySelector('input');
-            const containerRect = activeElement.getBoundingClientRect();
-
-            if (event.ctrlKey) {
-                // Przenoszenie
-                let newLeft = event.clientX - offsetX - imgRect.left;
-                let newTop = event.clientY - offsetY - imgRect.top;
-
-                newLeft = Math.max(0, Math.min(newLeft, imgRect.width - containerRect.width));
-                newTop = Math.max(0, Math.min(newTop, imgRect.height - containerRect.height));
-
-                activeElement.style.left = newLeft + 'px';
-                activeElement.style.top = newTop + 'px';
-                activeElement.style.bottom = 'auto';
-                activeElement.style.transform = 'none';
-
-                // Aktualizacja ukrytych pól dla pozycji
-                const hiddenX = document.getElementById(activeElement.id === 'topTextContainer' ? 'topTextX' : 'bottomTextX');
-                const hiddenY = document.getElementById(activeElement.id === 'topTextContainer' ? 'topTextY' : 'bottomTextY');
-                hiddenX.value = newLeft;
-                hiddenY.value = newTop;
-            } else {
-                // Zmiana rozmiaru
-                let newWidth, newHeight, newLeft = containerRect.left - imgRect.left, newTop = containerRect.top - imgRect.top;
-                const minWidth = 100;
-                const minHeight = 40;
-                const maxWidth = imgRect.width * 0.8;
-                const maxHeight = imgRect.height * 0.5;
-
-                if (handleType === 'top-left') {
-                    newWidth = containerRect.width - (event.clientX - containerRect.left);
-                    newHeight = containerRect.height - (event.clientY - containerRect.top);
-                    newLeft = containerRect.left - imgRect.left + (event.clientX - containerRect.left);
-                    newTop = containerRect.top - imgRect.top + (event.clientY - containerRect.top);
-                } else if (handleType === 'top-right') {
-                    newWidth = event.clientX - containerRect.left;
-                    newHeight = containerRect.height - (event.clientY - containerRect.top);
-                    newTop = containerRect.top - imgRect.top + (event.clientY - containerRect.top);
-                } else if (handleType === 'bottom-left') {
-                    newWidth = containerRect.width - (event.clientX - containerRect.left);
-                    newHeight = event.clientY - containerRect.top;
-                    newLeft = containerRect.left - imgRect.left + (event.clientX - containerRect.left);
-                } else if (handleType === 'bottom-right') {
-                    newWidth = event.clientX - containerRect.left;
-                    newHeight = event.clientY - containerRect.top;
-                }
-
-                newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
-                newHeight = Math.max(minHeight, Math.min(newHeight, maxHeight));
-
-                input.style.width = newWidth + 'px';
-                input.style.height = newHeight + 'px';
-
-                if (handleType.includes('left')) {
-                    activeElement.style.left = newLeft + 'px';
-                }
-                if (handleType.includes('top')) {
-                    activeElement.style.top = newTop + 'px';
-                    activeElement.style.bottom = 'auto';
-                }
-                activeElement.style.transform = 'none';
-
-                // Aktualizacja ukrytych pól dla pozycji przy zmianie rozmiaru
-                if (handleType.includes('left') || handleType.includes('top')) {
-                    const hiddenX = document.getElementById(activeElement.id === 'topTextContainer' ? 'topTextX' : 'bottomTextX');
-                    const hiddenY = document.getElementById(activeElement.id === 'topTextContainer' ? 'topTextY' : 'bottomTextY');
-                    hiddenX.value = newLeft;
-                    hiddenY.value = newTop;
-                }
-            }
-        }
-
-        function stopHandle() {
-            activeElement = null;
-            handleType = null;
-            document.removeEventListener('mousemove', handleMove);
-            document.removeEventListener('mouseup', stopHandle);
-        }
-    </script>
 </body>
 </html>
