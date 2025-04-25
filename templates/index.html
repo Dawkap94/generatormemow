@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <title>Meme Generator</title>
   <style>
     body {
@@ -10,12 +11,11 @@
       background: #2b2b2b;
       color: #eee;
     }
-
     form {
       margin-bottom: 30px;
-      width:500px;
+      width: 500px;
     }
-    h1, h2{
+    h1, h2 {
       margin: 10px 0;
       font-weight: bold;
       stroke-width: 2px;
@@ -26,7 +26,7 @@
       margin-top: 10px;
       font-weight: bold;
     }
-    input[type="file"]{
+    input[type="file"] {
       cursor: pointer;
     }
     input[type="text"],
@@ -35,12 +35,11 @@
       padding: 8px;
       margin-top: 5px;
       box-sizing: border-box;
-      
       background-color: #555;
       color: #eee;
       border: none;
     }
-    input[type="color"]{
+    input[type="color"] {
       border: none;
       border-radius: 0;
       width: 30px;
@@ -51,12 +50,10 @@
       outline: none;
       cursor: pointer;
     }
-    
-    input:focus{
+    input:focus {
       outline: none;
       border: 2px solid #128ada;
     }
-
     button {
       margin-top: 15px;
       padding: 10px 20px;
@@ -66,7 +63,6 @@
       border: none;
       cursor: pointer;
     }
-
     .meme-preview {
       position: relative;
       border: dashed 1px #999;
@@ -74,7 +70,6 @@
       width: 500px;
       height: 500px;
     }
-
     .top-text,
     .bottom-text {
       position: absolute;
@@ -89,23 +84,27 @@
       word-break: break-word;
       width: 1px;
     }
-
     .top-text {
       top: 10px;
     }
-
     .bottom-text {
       bottom: 10px;
     }
     .meme-preview #preview-img {
-        display: block;
-        overflow: hidden;
-        width: 500px;
-        height: 500px;
-        text-indent:-9999px;
-        margin-left: -20000px;
+      display: block;
+      width: 500px;
+      height: 500px;
+      object-fit: contain;
+      position: absolute;
+      top: 0;
+      left: 0;
+      visibility: hidden; /* Initially hidden */
     }
-    .memeGenerator_container{
+    .meme-preview #preview-img.loaded {
+      visibility: visible;
+      margin-left: 0;
+    }
+    .memeGenerator_container {
       width: 500px;
       height: 100%;
       margin: 0 auto;
@@ -113,19 +112,18 @@
       flex-direction: column;
       align-items: center;
     }
-    .memeGenerator_bg{
+    .memeGenerator_bg {
       background-image: url('https://images.fineartamerica.com/images/artworkimages/medium/3/meme-pattern-daniel-de-klawn.jpg');
       width: 100vw;
       height: 100vh;
       opacity: 0.05;
-      
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       z-index: -1;
     }
-    .memeGenerator_text{
+    .memeGenerator_text {
       display: flex;
       align-items: center;
       gap: 10px;
@@ -137,12 +135,10 @@
       margin: 20px auto;
       overflow: hidden;
     }
-  
     .carousel-track {
       display: flex;
       transition: transform 0.4s ease-in-out;
     }
-  
     .carousel-img {
       width: 250px;
       flex-shrink: 0;
@@ -151,7 +147,6 @@
       object-position: center;
       cursor: pointer;
     }
-  
     .carousel-btn {
       position: absolute;
       top: 50%;
@@ -164,29 +159,26 @@
       cursor: pointer;
       z-index: 2;
     }
-  
     .carousel-btn.prev {
       left: 10px;
     }
-  
     .carousel-btn.next {
       right: 10px;
     }
-    .memeGenerator_inputTemplates{
-      display: flex; 
-      width: 800px; 
+    .memeGenerator_inputTemplates {
+      display: flex;
+      width: 800px;
       justify-content: space-between;
     }
-    @media screen and (max-width: 600px){
-      .memeGenerator_container, form{
+    @media screen and (max-width: 600px) {
+      .memeGenerator_container, form {
         width: 100%;
       }
-      .meme-preview, .meme-preview #preview-img{
+      .meme-preview, .meme-preview #preview-img {
         width: 100%;
         min-height: 30vh;
         height: 100%;
       }
-
     }
   </style>
 </head>
@@ -195,40 +187,38 @@
   <div class="memeGenerator_container">
     <h1>Meme Generator</h1>
     <div class="memeGenerator_inputTemplates">
-      <form action="/generate" method="POST" enctype="multipart/form-data">
+      <form id="meme-form">
         <label for="image">Wgraj obrazek:</label>
-        <input type="file" name="image" id="image" accept=".jpg, .jpeg, .png" required />
-  
-        
+        <input type="file" name="image" id="image" accept=".jpg, .jpeg, .png" />
         <label for="top_text">Tekst górny:</label>
         <div class="memeGenerator_text">
           <input type="text" name="top_text" id="top_text" maxlength="100"/>
-          <input type="color" name="top_color" id="colorPicker_top" />
+          <input type="color" name="top_color" id="colorPicker_top" value="#ffffff" />
         </div>
-        
-        
         <label for="bottom_text">Tekst dolny:</label>
         <div class="memeGenerator_text">
           <input type="text" name="bottom_text" id="bottom_text" maxlength="100"/>
-          <input type="color" name="bottom_color" id="colorPicker_bottom" />
+          <input type="color" name="bottom_color" id="colorPicker_bottom" value="#ffffff" />
         </div>
-        
         <button type="submit">Generuj mema</button>
       </form>
       <div class="carousel">
-        <button class="carousel-btn prev">&#10094;</button>
+        <button class="carousel-btn prev">❮</button>
         <div class="carousel-track">
-          <img src="https://imgflip.com/s/meme/Running-Away-Balloon.jpg" class="carousel-img" alt="Meme 1" />
-          <img src="https://i.imgflip.com/1jqcf8.jpg?a484776" class="carousel-img" alt="Meme 2" />
-          <img src="https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-full-719a53dc.webp" class="carousel-img" alt="Meme 3" />
-          <img src="https://www.cnet.com/a/img/resize/20d6844768bd3f5f0df41deee97897423bcaf3c5/hub/2021/11/03/3c2a7d79-770e-4cfa-9847-66b3901fb5d7/c09.jpg?auto=webp&fit=crop&height=1200&width=1200" class="carousel-img" alt="Meme 4" />
-          <img src="https://dinoanimals.pl/wp-content/uploads/2013/09/Nosacz.jpg" class="carousel-img" alt="Meme 5" />
+          <img src="/static/memes/1.png" class="carousel-img" alt="Meme 1" />
+<!--          <img src="/static/memes/2.png" class="carousel-img" alt="Meme 2" />-->
+          <img src="/static/memes/3.png" class="carousel-img" alt="Meme 3" />
+          <img src="/static/memes/4.png" class="carousel-img" alt="Meme 4" />
+          <img src="/static/memes/5.png" class="carousel-img" alt="Meme 5" />
+          <img src="/static/memes/6.png" class="carousel-img" alt="Meme 6" />
+          <img src="/static/memes/8.png" class="carousel-img" alt="Meme 8" />
+          <img src="/static/memes/9.png" class="carousel-img" alt="Meme 9" />
+          <img src="/static/memes/10.png" class="carousel-img" alt="Meme 10" />
         </div>
-        <button class="carousel-btn next">&#10095;</button>
+        <input type="hidden" name="carousel_image" id="carousel_image" />
+        <button class="carousel-btn next">❯</button>
       </div>
     </div>
-    
-
     <h2>Podgląd:</h2>
     <div class="meme-preview">
       <img id="preview-img" src="#" alt="Podgląd obrazka" />
@@ -236,8 +226,6 @@
       <div class="bottom-text" id="preview-bottom-text"></div>
     </div>
   </div>
-  
-
   <script>
     const borderPrev = document.querySelector('.meme-preview');
     const imageInput = document.getElementById('image');
@@ -246,14 +234,14 @@
     const bottomInput = document.getElementById('bottom_text');
     const previewTop = document.getElementById('preview-top-text');
     const previewBottom = document.getElementById('preview-bottom-text');
-
-    const color_top =  document.getElementById('colorPicker_top');
-    const color_bottom =  document.getElementById('colorPicker_bottom');
-
+    const colorTop = document.getElementById('colorPicker_top');
+    const colorBottom = document.getElementById('colorPicker_bottom');
+    const form = document.getElementById('meme-form');
     const track = document.querySelector('.carousel-track');
     const images = document.querySelectorAll('.carousel-img');
     const prevBtn = document.querySelector('.carousel-btn.prev');
     const nextBtn = document.querySelector('.carousel-btn.next');
+    const carouselImageInput = document.getElementById('carousel_image');
 
     let index = 0;
 
@@ -274,8 +262,13 @@
     images.forEach(img => {
       img.addEventListener('click', () => {
         previewImg.src = img.src;
-        previewImg.style.marginLeft = "0";
+        previewImg.classList.add('loaded');
         borderPrev.style.border = 'none';
+        carouselImageInput.value = img.src.split('/').pop();
+        // Ensure image is loaded before proceeding
+        previewImg.onload = () => {
+          previewImg.style.visibility = 'visible';
+        };
       });
     });
 
@@ -283,72 +276,119 @@
       const file = this.files[0];
       if (file && ["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
         previewImg.src = URL.createObjectURL(file);
+        previewImg.classList.add('loaded');
         borderPrev.style.border = 'none';
-        previewImg.style.marginLeft = '0px'
+        carouselImageInput.value = '';
+        // Ensure image is loaded
+        previewImg.onload = () => {
+          previewImg.style.visibility = 'visible';
+        };
       } else {
         alert("Tylko pliki JPG, JPEG i PNG są dozwolone.");
         this.value = "";
       }
     });
-    color_top.addEventListener('input', () => {
-      previewTop.style.color = color_top.value;
-    })
-    color_bottom.addEventListener('input', () => {
-      previewBottom.style.color = color_bottom.value;
-    })
+
+    colorTop.addEventListener('input', () => {
+      previewTop.style.color = colorTop.value;
+    });
+
+    colorBottom.addEventListener('input', () => {
+      previewBottom.style.color = colorBottom.value;
+    });
+
     topInput.addEventListener('input', function () {
       previewTop.textContent = this.value;
-      previewTop.style.width = `unset`
+      previewTop.style.width = `unset`;
     });
 
     bottomInput.addEventListener('input', function () {
       previewBottom.textContent = this.value;
-      previewBottom.style.width = `unset`
+      previewBottom.style.width = `unset`;
     });
 
     function enableDrag(el) {
       let offsetX = 0, offsetY = 0;
       let isDragging = false;
-  
+
       el.style.pointerEvents = "auto";
       el.style.cursor = "grab";
-  
+
       el.addEventListener("mousedown", (e) => {
-        el.style.transform = 'translate(0)'
-        el.style.transform = 'translate(0)'
+        el.style.transform = 'translate(0)';
         isDragging = true;
         const rect = el.getBoundingClientRect();
         offsetX = e.clientX - rect.left;
         offsetY = e.clientY - rect.top;
         el.style.cursor = "grabbing";
-        previewTop.style.width = `${Math.abs(previewTop.offsetWidth + 1)}px`
-        previewBottom.style.width = `${Math.abs(previewBottom.offsetWidth + 1)}px`
+        previewTop.style.width = `${Math.abs(previewTop.offsetWidth + 1)}px`;
+        previewBottom.style.width = `${Math.abs(previewBottom.offsetWidth + 1)}px`;
         e.preventDefault();
       });
-  
+
       document.addEventListener("mousemove", (e) => {
         if (!isDragging) return;
-  
+
         const containerRect = borderPrev.getBoundingClientRect();
         let left = e.clientX - containerRect.left - offsetX;
         let top = e.clientY - containerRect.top - offsetY;
 
         const maxLeft = containerRect.width - el.offsetWidth;
-        const maxTop = previewTop.offsetHeight == 0 ? 465 : containerRect.height - previewTop.offsetHeight;
-        
+        const maxTop = containerRect.height - el.offsetHeight;
+
         el.style.left = Math.max(0, Math.min(left, maxLeft)) + "px";
         el.style.top = Math.max(0, Math.min(top, maxTop)) + "px";
       });
-  
+
       document.addEventListener("mouseup", () => {
         isDragging = false;
         el.style.cursor = "grab";
       });
     }
-  
+
     enableDrag(previewTop);
     enableDrag(previewBottom);
-  </script>
 
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const memePreview = document.querySelector('.meme-preview');
+
+      // Check if an image is selected (either uploaded or from carousel)
+      if (!previewImg.src || !previewImg.classList.contains('loaded')) {
+        alert('Proszę wybrać obrazek z karuzeli lub wgrać własny.');
+        return;
+      }
+
+      try {
+        // Ensure the preview image is visible for screenshot
+        previewImg.style.visibility = 'visible';
+        previewImg.style.marginLeft = '0';
+
+        // Wait for the image to be fully rendered
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const canvas = await html2canvas(memePreview, { scale: 1 });
+        const screenshot = canvas.toDataURL('image/png');
+
+        const formData = new FormData();
+        formData.append('screenshot', screenshot);
+
+        const response = await fetch('/', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+        if (result.meme_id) {
+          window.location.href = `/meme/${result.meme_id}`;
+        } else {
+          alert('Błąd podczas generowania mema.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Wystąpił błąd podczas generowania mema.');
+      }
+    });
+  </script>
 </body>
 </html>
