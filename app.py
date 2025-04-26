@@ -5,14 +5,16 @@ import base64
 
 app = Flask(__name__)
 
-if not os.path.exists('output'):
-    os.makedirs('output')
+OUTPUT_FOLDER = '/tmp/output'
+
+if not os.path.exists(OUTPUT_FOLDER):
+    os.makedirs(OUTPUT_FOLDER)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         meme_id = str(uuid.uuid4())
-        output_path = os.path.join('output', f'{meme_id}.png')
+        output_path = os.path.join(OUTPUT_FOLDER, f'{meme_id}.png')
 
         screenshot_data = request.form.get('screenshot')
         if screenshot_data:
@@ -35,7 +37,7 @@ def show_meme(meme_id):
 
 @app.route('/output/<filename>')
 def serve_output(filename):
-    return send_file(os.path.join('output', filename), mimetype='image/png')
+    return send_file(os.path.join(OUTPUT_FOLDER, filename), mimetype='image/png')
 
 if __name__ == '__main__':
     app.run(debug=True)
