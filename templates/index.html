@@ -368,7 +368,7 @@
         await new Promise(resolve => setTimeout(resolve, 100));
 
         const canvas = await html2canvas(memePreview, { scale: 1 });
-        const screenshot = canvas.toDataURL('image/png');
+        const screenshot = canvas.toDataURL('image/jpeg');
 
         const formData = new FormData();
         formData.append('screenshot', screenshot);
